@@ -1,0 +1,52 @@
+clc;
+Fs = 1500;
+fp = 80;fs = 100;
+rp = 1.4;rs = 1.6;
+wp = 2*pi*fp;ws = 2*pi*fs;
+[n,wn] = buttord(wp,ws,rp,rs,'s');
+
+[z,P,k] = buttap(n);
+[bp,ap] = zp2tf(z,P,k);
+[bs,as] = lp2lp(bp,ap,wp);
+
+[hs,ws] = freqs(bs,as);
+[bz,az] = bilinear(bs,as,Fs);
+[h1,w1] = freqz(bz,az);
+m = filter(bz,az,M(:,1));
+
+figure
+freqz(bz,az);title('巴特沃斯低通滤波器幅频曲线');
+
+figure
+subplot(2,1,1);
+plot(TIME,M(:,1));
+xlabel('t(s)');ylabel('mv');title('原始心电信号波形');grid;
+
+subplot(2,1,2);
+plot(TIME,m);
+xlabel('t(s)');ylabel('mv');title('低通滤波后的时域图形');grid;
+
+N = 2465;
+n = 0:N-1;
+mf = fft(M(:,1),N);
+mag = abs(mf);
+f = (0:length(mf-1)*Fs/length(mf));
+
+figure
+subplot(2,1,1)
+plot(f,mag);axis([0,1500,1,50]);grid;
+xlabel('频率（HZ）');ylabel('幅值');title('心电信号频谱图');
+
+mfa = fft(m,N);
+maga = abs(mfa);
+fa = (0:length(mfa)-1) * Fs/length(mfa);
+subplot(2,1,2)
+plot(fa,maga);axis([0,1500,1,50]);grid;
+xlabel('频率（HZ）');ylabel('幅值');title('低通滤波后心电信号频谱图')
+
+wn = M(:,1);
+P = 10*log10(abs(fft(wn).^2)/N);
+f = (0:length(P)-1)/length(P);
+figure
+plot(f,P);grid
+xlabel('归一化频率');ylabel('功率（dB）');title('心电信号功率谱');
